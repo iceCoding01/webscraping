@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs - Opportunity Hub{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="q" class="block text-sm font-medium text-gray-700">Search</label>
+                <input type="text" name="q" id="q" value="{{ request.GET.q }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+                <input type="text" name="location" id="location" value="{{ request.GET.location }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="employment_type" class="block text-sm font-medium text-gray-700">Job Type</label>
+                <select name="employment_type" id="employment_type"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    {% for value, label in employment_types %}
+                        <option value="{{ value }}" {% if value == request.GET.employment_type %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-3">
+                <div class="flex items-center">
+                    <input type="checkbox" name="remote_only" id="remote_only" value="1"
+                        {% if request.GET.remote_only %}checked{% endif %}
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="remote_only" class="ml-2 block text-sm text-gray-700">
+                        Show Remote Jobs Only
+                    </label>
+                </div>
+            </div>
+            <div class="md:col-span-3">
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    Search Jobs
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    <div class="space-y-4">
+        {% for job in jobs %}
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-xl font-semibold text-blue-600">
+                            <a href="{% url 'jobs:job-detail' job.pk %}">{{ job.title }}</a>
+                        </h2>
+                        <p class="text-gray-600">{{ job.company }}</p>
+                        <p class="text-gray-500">{{ job.location }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                            {{ job.get_employment_type_display }}
+                        </span>
+                        {% if job.is_remote %}
+                            <span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm ml-2">
+                                Remote
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-gray-700">{{ job.description|truncatewords:50 }}</p>
+                </div>
+                <div class="mt-4 flex justify-between items-center">
+                    <div class="text-gray-500 text-sm">
+                        Posted: {{ job.posted_date }}
+                        {% if job.deadline %}
+                            | Deadline: {{ job.deadline }}
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'jobs:job-detail' job.pk %}"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <p class="text-gray-500">No jobs found matching your criteria.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="flex justify-center space-x-2">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}"
+                    class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Previous
+                </a>
+            {% endif %}
+            <span class="px-3 py-2">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}"
+                    class="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Next
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Opportunity Hub{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Hero Section -->
+    <section class="text-center py-12 bg-white rounded-lg shadow-md">
+        <h1 class="text-4xl font-bold text-blue-600 mb-4">Find Your Next Opportunity</h1>
+        <p class="text-xl text-gray-600 mb-8">Discover global job opportunities and scholarships all in one place.</p>
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'jobs:job-list' %}" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700">Browse Jobs</a>
+            <a href="{% url 'scholarships:scholarship-list' %}" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700">Browse Scholarships</a>
+        </div>
+    </section>
+
+    <!-- Latest Jobs Section -->
+    <section class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Latest Jobs</h2>
+            <a href="{% url 'jobs:job-list' %}" class="text-blue-600 hover:text-blue-800">View All →</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for job in latest_jobs %}
+                <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <h3 class="font-semibold text-lg mb-2">{{ job.title }}</h3>
+                    <p class="text-gray-600 mb-2">{{ job.company }}</p>
+                    <p class="text-gray-500 mb-2">{{ job.location }}</p>
+                    <a href="{% url 'jobs:job-detail' job.pk %}" class="text-blue-600 hover:text-blue-800">Learn More →</a>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Latest Scholarships Section -->
+    <section class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Latest Scholarships</h2>
+            <a href="{% url 'scholarships:scholarship-list' %}" class="text-blue-600 hover:text-blue-800">View All →</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for scholarship in latest_scholarships %}
+                <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <h3 class="font-semibold text-lg mb-2">{{ scholarship.title }}</h3>
+                    <p class="text-gray-600 mb-2">{{ scholarship.organization }}</p>
+                    <p class="text-gray-500 mb-2">Amount: {{ scholarship.amount }}</p>
+                    <p class="text-gray-500 mb-2">Deadline: {{ scholarship.deadline }}</p>
+                    <a href="{% url 'scholarships:scholarship-detail' scholarship.pk %}" class="text-blue-600 hover:text-blue-800">Learn More →</a>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="text-3xl text-blue-600 mb-4">🌎</div>
+            <h3 class="text-xl font-semibold mb-2">Global Opportunities</h3>
+            <p class="text-gray-600">Access job listings and scholarships from around the world.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="text-3xl text-blue-600 mb-4">🔍</div>
+            <h3 class="text-xl font-semibold mb-2">Smart Search</h3>
+            <p class="text-gray-600">Filter by location, education level, job type, and more.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="text-3xl text-blue-600 mb-4">🔔</div>
+            <h3 class="text-xl font-semibold mb-2">Personalized Alerts</h3>
+            <p class="text-gray-600">Get notified about opportunities that match your interests.</p>
+        </div>
+    </section>
+</div>
+{% endblock %}
