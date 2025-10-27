@@ -4,7 +4,8 @@ from . import views
 app_name = 'scholarships'
 
 urlpatterns = [
-    # Add scholarship-related URLs here
-    # path('', views.scholarship_list, name='scholarship_list'),
-    # path('<int:pk>/', views.scholarship_detail, name='scholarship_detail'),
+    path('', views.scholarship_list, name='scholarship-list'),
+    path('<int:pk>/', views.scholarship_detail, name='scholarship-detail'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('apply/<int:pk>/', views.scholarship_apply, name='scholarship-apply'),
 ]

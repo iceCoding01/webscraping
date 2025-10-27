@@ -1,75 +1,61 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import render, redirect
+from django.contrib import messages
 from .models import Scholarship, ScholarshipApplication
-from .tasks import scrape_scholarships_task
 
-class ScholarshipListView(ListView):
-    model = Scholarship
-    template_name = 'scholarships/scholarship_list.html'
-    context_object_name = 'scholarships'
-    paginate_by = 10
-    ordering = ['-created_at']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
+def scholarship_list(request):
+    scholarships = Scholarship.objects.all().order_by('-created_at')
+    
+    # Filter by search query
+    q = request.GET.get('q')
+    if q:
+        scholarships = scholarships.filter(
+            Q(title__icontains=q) |
+            Q(organization__icontains=q) |
+            Q(description__icontains=q)
+        )
+    
+    # Filter by education level
+    education_level = request.GET.get('education_level')
+    if education_level:
+        scholarships = scholarships.filter(education_level=education_level)
         
-        # Filter by search query
-        q = self.request.GET.get('q')
-        if q:
-            queryset = queryset.filter(
-                Q(title__icontains=q) |
-                Q(organization__icontains=q) |
-                Q(description__icontains=q)
-            )
+    # Filter by country
+    country = request.GET.get('country')
+    if country:
+        scholarships = scholarships.filter(country__icontains=country)
         
-        # Filter by education level
-        education_level = self.request.GET.get('education_level')
-        if education_level:
-            queryset = queryset.filter(education_level=education_level)
-            
-        # Filter by country
-        country = self.request.GET.get('country')
-        if country:
-            queryset = queryset.filter(country__icontains=country)
-            
-        # Filter by field of study
-        field = self.request.GET.get('field')
-        if field:
-            queryset = queryset.filter(field_of_study__icontains=field)
-            
-        # Filter by fully funded
-        fully_funded = self.request.GET.get('fully_funded')
-        if fully_funded:
-            queryset = queryset.filter(is_fully_funded=True)
-            
-        return queryset
-
-class ScholarshipDetailView(DetailView):
-    model = Scholarship
-    template_name = 'scholarships/scholarship_detail.html'
-    context_object_name = 'scholarship'
-
-class ScholarshipApplicationCreateView(LoginRequiredMixin, CreateView):
-    model = ScholarshipApplication
-    template_name = 'scholarships/scholarship_application_form.html'
-    fields = ['status', 'notes', 'applied_date']
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.scholarship_id = self.kwargs['scholarship_id']
-        return super().form_valid(form)
-
-class ScholarshipApplicationUpdateView(LoginRequiredMixin, UpdateView):
-    model = ScholarshipApplication
-    template_name = 'scholarships/scholarship_application_form.html'
-    fields = ['status', 'notes', 'applied_date']
-
-def scholarship_dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('account_login')
+    # Filter by field of study
+    field = request.GET.get('field')
+    if field:
+        scholarships = scholarships.filter(field_of_study__icontains=field)
         
+    # Filter by fully funded
+    fully_funded = request.GET.get('fully_funded')
+    if fully_funded:
+        scholarships = scholarships.filter(is_fully_funded=True)
+    
+    context = {
+        'scholarships': scholarships,
+    }
+    return render(request, 'scholarships/scholarship_list.html', context)
+
+def scholarship_detail(request, pk):
+    scholarship = get_object_or_404(Scholarship, pk=pk)
+    similar_scholarships = Scholarship.objects.filter(
+        Q(education_level=scholarship.education_level) |
+        Q(field_of_study=scholarship.field_of_study)
+    ).exclude(pk=scholarship.pk)[:3]
+    
+    context = {
+        'scholarship': scholarship,
+        'similar_scholarships': similar_scholarships,
+    }
+    return render(request, 'scholarships/scholarship_detail.html', context)
+
+@login_required
+def dashboard(request):
     applications = ScholarshipApplication.objects.filter(user=request.user).select_related('scholarship')
     saved_scholarships = applications.filter(status='SAVED')
     applied_scholarships = applications.filter(status='APPLIED')
@@ -80,5 +66,23 @@ def scholarship_dashboard(request):
         'applied_scholarships': applied_scholarships,
         'in_progress_scholarships': in_progress_scholarships,
     }
-    
     return render(request, 'scholarships/dashboard.html', context)
+
+@login_required
+def scholarship_apply(request, pk):
+    scholarship = get_object_or_404(Scholarship, pk=pk)
+    
+    # Check if already applied
+    if ScholarshipApplication.objects.filter(user=request.user, scholarship=scholarship).exists():
+        messages.warning(request, 'You have already applied for this scholarship.')
+        return redirect('scholarships:scholarship-detail', pk=pk)
+    
+    # Create new application
+    ScholarshipApplication.objects.create(
+        user=request.user,
+        scholarship=scholarship,
+        status='APPLIED'
+    )
+    
+    messages.success(request, 'Successfully applied for the scholarship!')
+    return redirect('scholarships:dashboard')
