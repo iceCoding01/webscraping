@@ -1,70 +1,47 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import render, redirect
 from .models import JobListing, JobApplication
-from .tasks import scrape_jobs_task
+from django.contrib import messages
 
-class JobListView(ListView):
-    model = JobListing
-    template_name = 'jobs/job_list.html'
-    context_object_name = 'jobs'
-    paginate_by = 10
-    ordering = ['-posted_date']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
+def job_list(request):
+    jobs = JobListing.objects.all().order_by('-posted_date')
+    
+    # Handle search and filters
+    q = request.GET.get('q')
+    if q:
+        jobs = jobs.filter(
+            Q(title__icontains=q) |
+            Q(company__icontains=q) |
+            Q(description__icontains=q)
+        )
+    
+    employment_type = request.GET.get('employment_type')
+    if employment_type:
+        jobs = jobs.filter(employment_type=employment_type)
         
-        # Filter by search query
-        q = self.request.GET.get('q')
-        if q:
-            queryset = queryset.filter(
-                Q(title__icontains=q) |
-                Q(company__icontains=q) |
-                Q(description__icontains=q)
-            )
+    location = request.GET.get('location')
+    if location:
+        jobs = jobs.filter(location__icontains=location)
         
-        # Filter by employment type
-        employment_type = self.request.GET.get('employment_type')
-        if employment_type:
-            queryset = queryset.filter(employment_type=employment_type)
-            
-        # Filter by location
-        location = self.request.GET.get('location')
-        if location:
-            queryset = queryset.filter(location__icontains=location)
-            
-        # Filter by remote only
-        remote_only = self.request.GET.get('remote_only')
-        if remote_only:
-            queryset = queryset.filter(is_remote=True)
-            
-        return queryset
+    remote_only = request.GET.get('remote_only')
+    if remote_only:
+        jobs = jobs.filter(is_remote=True)
+    
+    context = {
+        'jobs': jobs,
+    }
+    return render(request, 'jobs/job_list.html', context)
 
-class JobDetailView(DetailView):
-    model = JobListing
-    template_name = 'jobs/job_detail.html'
-    context_object_name = 'job'
+def job_detail(request, pk):
+    job = get_object_or_404(JobListing, pk=pk)
+    context = {
+        'job': job,
+    }
+    return render(request, 'jobs/job_detail.html', context)
 
-class JobApplicationCreateView(LoginRequiredMixin, CreateView):
-    model = JobApplication
-    template_name = 'jobs/job_application_form.html'
-    fields = ['status', 'notes', 'applied_date']
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.job_id = self.kwargs['job_id']
-        return super().form_valid(form)
-
-class JobApplicationUpdateView(LoginRequiredMixin, UpdateView):
-    model = JobApplication
-    template_name = 'jobs/job_application_form.html'
-    fields = ['status', 'notes', 'applied_date']
-
-def job_dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('account_login')
-        
+@login_required
+def dashboard(request):
     applications = JobApplication.objects.filter(user=request.user).select_related('job')
     saved_jobs = applications.filter(status='SAVED')
     applied_jobs = applications.filter(status='APPLIED')
@@ -75,5 +52,23 @@ def job_dashboard(request):
         'applied_jobs': applied_jobs,
         'in_progress_jobs': in_progress_jobs,
     }
-    
     return render(request, 'jobs/dashboard.html', context)
+
+@login_required
+def job_apply(request, pk):
+    job = get_object_or_404(JobListing, pk=pk)
+    
+    # Check if already applied
+    if JobApplication.objects.filter(user=request.user, job=job).exists():
+        messages.warning(request, 'You have already applied for this job.')
+        return redirect('jobs:job-detail', pk=pk)
+    
+    # Create new application
+    JobApplication.objects.create(
+        user=request.user,
+        job=job,
+        status='APPLIED'
+    )
+    
+    messages.success(request, 'Successfully applied for the job!')
+    return redirect('jobs:dashboard')

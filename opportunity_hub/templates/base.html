@@ -18,7 +18,7 @@
                 </div>
                 <div class="flex space-x-4">
                     <a href="{% url 'jobs:job-list' %}" class="hover:bg-blue-700 px-3 py-2 rounded-md">Jobs</a>
-                    <a href="{% url 'scholarships:scholarship-list' %}" class="hover:bg-blue-700 px-3 py-2 rounded-md">Scholarships</a>
+                    <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded-md">Scholarships</a>
                     {% if user.is_authenticated %}
                         <a href="{% url 'jobs:dashboard' %}" class="hover:bg-blue-700 px-3 py-2 rounded-md">My Jobs</a>
                         <a href="{% url 'scholarships:dashboard' %}" class="hover:bg-blue-700 px-3 py-2 rounded-md">My Scholarships</a>

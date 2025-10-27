@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Jobs Dashboard - Opportunity Hub{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Saved Jobs -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900">Saved Jobs</h2>
+            <div class="space-y-4">
+                {% for application in saved_jobs %}
+                    <div class="border-b pb-4 last:border-b-0">
+                        <h3 class="font-semibold">
+                            <a href="{% url 'jobs:job-detail' application.job.pk %}" class="hover:text-blue-600">
+                                {{ application.job.title }}
+                            </a>
+                        </h3>
+                        <p class="text-gray-600">{{ application.job.company }}</p>
+                        <p class="text-gray-500 text-sm">Saved on {{ application.created_at|date }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500">No saved jobs yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Applied Jobs -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900">Applied Jobs</h2>
+            <div class="space-y-4">
+                {% for application in applied_jobs %}
+                    <div class="border-b pb-4 last:border-b-0">
+                        <h3 class="font-semibold">
+                            <a href="{% url 'jobs:job-detail' application.job.pk %}" class="hover:text-blue-600">
+                                {{ application.job.title }}
+                            </a>
+                        </h3>
+                        <p class="text-gray-600">{{ application.job.company }}</p>
+                        <p class="text-gray-500 text-sm">Applied on {{ application.applied_date|date }}</p>
+                        {% if application.notes %}
+                            <p class="text-sm text-gray-600 mt-2">{{ application.notes }}</p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500">No applications submitted yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- In Progress Jobs -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900">In Progress</h2>
+            <div class="space-y-4">
+                {% for application in in_progress_jobs %}
+                    <div class="border-b pb-4 last:border-b-0">
+                        <h3 class="font-semibold">
+                            <a href="{% url 'jobs:job-detail' application.job.pk %}" class="hover:text-blue-600">
+                                {{ application.job.title }}
+                            </a>
+                        </h3>
+                        <p class="text-gray-600">{{ application.job.company }}</p>
+                        <p class="text-gray-500 text-sm">Last updated {{ application.updated_at|date }}</p>
+                        {% if application.notes %}
+                            <p class="text-sm text-gray-600 mt-2">{{ application.notes }}</p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500">No jobs in progress.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Search Stats -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4 text-gray-900">Application Statistics</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center p-4 bg-gray-50 rounded">
+                <div class="text-2xl font-bold text-blue-600">{{ saved_jobs.count }}</div>
+                <div class="text-gray-600">Saved Jobs</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+                <div class="text-2xl font-bold text-green-600">{{ applied_jobs.count }}</div>
+                <div class="text-gray-600">Applications Submitted</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+                <div class="text-2xl font-bold text-yellow-600">{{ in_progress_jobs.count }}</div>
+                <div class="text-gray-600">In Progress</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+                <div class="text-2xl font-bold text-purple-600">{{ applied_jobs.count|add:in_progress_jobs.count }}</div>
+                <div class="text-gray-600">Total Active</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
