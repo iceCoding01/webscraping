@@ -17,7 +17,7 @@ class Scholarship(models.Model):
     amount = models.CharField(max_length=100)
     country = models.CharField(max_length=100)
     education_level = models.CharField(max_length=20, choices=EDUCATION_LEVEL_CHOICES)
-    deadline = models.DateField()
+    deadline = models.DateField(null=True, blank=True)
     website_url = models.URLField()
     source_website = models.CharField(max_length=100)
     field_of_study = models.CharField(max_length=200)
